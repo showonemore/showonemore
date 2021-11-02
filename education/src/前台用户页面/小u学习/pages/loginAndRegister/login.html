@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <link rel="shortcut icon" href="../../favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css" />
+    <link rel="stylesheet" type="text/css" href="../../css/login.css" />
+    <script src="../../js/vue-v2.6.10.js"></script>
+    <script src="../../js/axios-0.18.0.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="pos">
+            <div class="login">
+                <span class="close iconfont icon-close"></span>
+                <img src="../../img/login/loginlogo.png" alt="">
+                <ul>
+                    <li></li>
+                    <li class="phone" style="color: red;" v-html="msg"></li>
+                    <li></li>
+                </ul>
+                <form action="" id="form">
+                    <input type="text" class="tel" id="" v-model="telephone" @focus="fun1" @blur="fun2" placeholder="请输入您的手机号">
+                    <input type="password" class="pass" v-model="password" id="" @focus="fun1" placeholder="请输入密码">
+                    <em></em>
+                    <div class="loginbtn" style="margin-left: 110px;line-height: 40px;" @click="submitForm">
+                        登陆
+                    </div>
+                </form>
+                <p>
+                    <span><a href="javascript:;">忘记密码</a></span>
+                    <span>
+                        还没有账号?
+                        <a href="../loginAndRegister/register.html">点击注册</a>
+                    </span>
+                </p>
+                <ul>
+                    <li></li>
+                    <li class="phone">使用第三方软件登录</li>
+                    <li></li>
+                </ul>
+                <p class="getCenter">
+                    <img src="../../img/login/wx.png" alt="">
+                    <img src="../../img/login/qq.png" alt="">
+                    <img src="../../img/login/sina.png" alt="">
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    new Vue({
+        el: "#app",
+        data: {
+            telephone:"",
+            password:"",
+            msg:"",
+            flag:false
+        },
+        methods: {
+            submitForm(){
+                if(this.telephone.trim()==""){
+                    this.msg="手机号不能为空"
+                    return false
+                }
+                if(this.password.trim()==""){
+                    this.msg="密码不能为空"
+                    return false
+                }else{
+                    if(this.flag){
+                        var params = new URLSearchParams()
+                        params.append("telephone",this.telephone)
+                        params.append("password",this.password)
+                        axios({
+                            url:"http://192.168.10.88/education/b_user?method=checkLogin",
+                            method:"post",
+                            data:params
+                        }).then(resp=>{
+                            if(resp.data.code==200){
+                                var user=JSON.stringify(resp.data.obj)
+                                sessionStorage.setItem("user",user)
+                                alert(resp.data.message)
+                                location.href="http://192.168.10.88:5501/%E5%B0%8Fu%E5%AD%A6%E4%B9%A0/index.html"
+                            }else{
+                                alert(resp.data.message)
+                            }
+                        })
+                    }
+                }
+            },
+            fun1(){
+                this.msg=""
+            },
+            fun2(){
+                if(this.telephone.trim()==""){
+                    this.msg="手机号码不能为空"
+                }else{
+                    var tel=/^[1][3456789][0-9]{9}$/
+                    if(!tel.test(this.telephone)){
+                        // 手机号不合法
+                        this.msg="手机号不合法"
+                    }else{
+                        // 验证手机号是否是会员
+                        axios({
+                            url:"http://192.168.10.88/education/b_user?method=checkTel&telephone="+this.telephone,
+                            method:"get"
+                        }).then(resp=>{
+                            if(resp.data==0){
+                                // 号码已存在，是会员
+                                this.msg="<font color='green'>VIP</font>"
+                                this.flag=true
+                            }else{
+                                this.msg="用户不存在，去<a href='register.html' >注册</a>"
+                            }
+                        })
+                    }
+                }
+            }
+        },
+        created() {
+
+        },
+
+    })
+</script>
+
+
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../../element-ui-2.13.0/lib/theme-chalk/index.css" />
+    <script type="text/javascript" src="../../vue/vue-v2.6.10.js"></script>
+    <script type="text/javascript" src="../../element-ui-2.13.0/lib/index.js"></script>
+    <script type="text/javascript" src="../../vue/axios-0.18.0.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <el-tag type="info" effect="dark" v-if="inputVisible" closable="true" :disable-transitions="disable"
+            @close="handleClose">用户课程管理</el-tag>
+        <div v-if="inputVisible">
+            <template>
+                <el-table
+                    :data="tableData.filter(data => !search || data.pname.toLowerCase().includes(search.toLowerCase()))"
+                    style="width: 100%" @selection-change="handleSelectionChange">
+                    <el-table-column type="selection" width="50">
+                    </el-table-column>
+                    <el-table-column label="序号" type="index" width="100px" prop="pid">
+                    </el-table-column>
+                    <el-table-column label="宠物名称" prop="pname">
+                    </el-table-column>
+                    <el-table-column label="年龄" prop="age">
+                    </el-table-column>
+                    <el-table-column label="品种" prop="brand">
+                    </el-table-column>
+                    <el-table-column label="毛色" prop="color">
+                    </el-table-column>
+                    <el-table-column align="right" width="200px">
+                        <template slot="header" slot-scope="scope">
+                            <el-input v-model="search" size="mini" placeholder="输入选课人搜索" />
+                        </template>
+                        <template slot-scope="scope">
+                            <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">修改</el-button>
+                            <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">详情
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </template>
+
+            <br />
+            <el-row>
+                <el-button type="warning" @click="delAll()">删除选中</el-button>
+            </el-row>
+
+            <!--  分页 -->
+            <template>
+                <div class="block" align="right">
+                    <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange"
+                        :current-page="currentPage" :page-sizes="[3, 4, 5, 5]" :page-size="pageSize"
+                        layout="total, sizes, prev, pager, next, jumper" :total="totalCount">
+                    </el-pagination>
+                </div>
+            </template>
+        </div>
+
+        <!--修改宠物信息-->
+        <el-dialog title="修改" :visible.sync="dialogFormVisible1">
+            <el-form ref="ruleForm" :model="ruleForm" label-width="80px">
+                <el-form-item label="宠物名称" prop="pid">
+                </el-form-item>
+                <el-form-item label="宠物名称">
+                    <el-input v-model="ruleForm.pname" style="width: 210px;"></el-input>
+                </el-form-item>
+                <el-form-item label="年龄">
+                    <el-input v-model="ruleForm.age" style="width: 210px;"></el-input>
+                </el-form-item>
+                <el-form-item label="品种">
+                    <el-input v-model="ruleForm.brand" style="width: 210px;" ></el-input>
+                </el-form-item>
+                <el-form-item label="毛色">
+                    <el-input v-model="ruleForm.color" style="width: 210px;" ></el-input>
+                </el-form-item>
+            </el-form>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogFormVisible1 = false">取 消</el-button>
+                <el-button type="primary" @click="submitForm('ruleForm')">确 定</el-button>
+            </span>
+        </el-dialog>
+
+        <!--结尾-->
+        <!--查看选课-->
+        <el-dialog title="选课信息" :visible.sync="dialogFormVisible2">
+            <el-form ref="ruleForm" :model="ruleForm" label-width="80px">
+                <el-form-item label="课程名称">
+                    <el-input v-model="ruleForm.pname" style="width: 210px;"></el-input>
+                </el-form-item>
+                <el-form-item label="年龄">
+                    <el-input v-model="ruleForm.age" style="width: 210px;"></el-input>
+                </el-form-item>
+                <el-form-item label="品种">
+                    <el-input v-model="ruleForm.brand" style="width: 210px;"></el-input>
+                </el-form-item>
+                <el-form-item label="毛色">
+                    <el-input v-model="ruleForm.color" style="width: 210px;"></el-input>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+        <!--结尾-->
+
+
+    </div>
+
+</body>
+<script>
+    axios.defaults.withCredentials = true
+    new Vue({
+        el: "#app",
+        data: {
+            /* 分页参数 */
+            tableData: [],
+            currentPage: 1,
+            totalCount: '',
+            pageSize: 3,
+            totalPage:'',
+            /* 条件查询 */
+            search: '',
+            //批量删除存放选中的复选框
+            multipleSelection: [],
+            //批量删除存放的uid
+            delarr: [],
+            /*选项卡*/
+            inputVisible: true,
+            disable: false,
+            //修改的对话框
+            dialogFormVisible1: false,
+            //详情的对话框
+            dialogFormVisible2: false,
+            //表单字段
+            ruleForm: '',
+            pname:[],
+        },
+        methods: {
+            
+            handleClose() {
+             window.close()
+            },
+          
+            handleEdit(index, row) {
+               this.dialogFormVisible1=true
+               this.ruleForm.pid=row.pid
+               this.ruleForm=row
+               axios({
+                   url:"http://localhost/project02/pet?method=updatepet",
+                   method:"get"
+               }).then(resp=>{
+                //    将获取到的数组赋值给courseName数组
+                   this.petName=resp.data
+               })
+            },
+            //显示详情
+            handleDelete(index, row) {
+                this.dialogFormVisible2=true
+                this.ruleForm=row
+            },
+          
+            findAllByPage() {
+                var params= new URLSearchParams()
+                params.append("currentPage",this.currentPage)
+                params.append("pageSize",this.pageSize)
+                params.append("search",this.search)
+                axios({
+                    url:"http://localhost/project02/pet?method=findPages",
+                    method:"post",
+                    data:params
+                }).then(resp=>{
+                    this.tableData=resp.data.list
+                    this.currentPage=resp.data.currentPage
+                    this.pageSize=resp.data.pageSize
+                    this.totalCount=resp.data.totalCount
+                    this.totalPage=resp.data.totalPage
+                })
+            },
+         
+            handleSizeChange(val) {
+               this.pageSize=val
+               this.findAllByPage()
+            },
+          
+            handleCurrentChange(val) {
+                this.currentPage=val
+                this.findAllByPage()
+            },
+        
+            handleSelectionChange(val) {
+                this.multipleSelection=val
+            },
+          
+            delAll() {
+                var ids=""
+              for(var i =0;i<this.multipleSelection.length;i++){
+                  if(i==this.multipleSelection.length-1){
+                    ids+=this.multipleSelection[i].pid
+                  }else{
+                      ids+=this.multipleSelection[i].pid+","
+                  }
+              }
+              axios({
+                      url:"http://localhost/project02/pet?method=delAll&ids="+ids,
+                      method:"get",
+                  }).then(resp=>{
+                      if(resp.data.code==200){
+                          this.$message.success(resp.data.message)
+                          setTimeout("location.reload()",1000)
+                      }else{
+                        this.$message.error(resp.data.message)
+                      }
+                  })
+            },
+         
+            submitForm(formName) {
+                this.$refs[formName].validate((valid)=>{
+                    var params = new URLSearchParams()
+                    params.append("pid",this.ruleForm.pid)
+                    params.append("pname",this.ruleForm.pname)
+                    params.append("age",this.ruleForm.age)
+                    params.append("brand",this.ruleForm.brand)
+                    params.append("color",this.ruleForm.color)
+                    axios({
+                        url:"http://localhost/project02/pet?method=updatepet",
+                        method:"post",
+                        data:params
+                    }).then(resp=>{
+                        if(resp.data.code==200){
+                            this.$message.success(resp.data.message) 
+                            setTimeout("location.reload()",1000)
+                        }else{
+                            this.$message.error(resp.data.message)
+                        }
+                    })
+                })
+            }
+        },
+        created(){
+            this.findAllByPage()
+        }
+        
+    })
+</script>
+
+</html>

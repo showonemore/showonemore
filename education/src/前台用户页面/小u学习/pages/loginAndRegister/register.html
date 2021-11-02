@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册</title>
+    <link rel="shortcut icon" href="../../favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" type="text/css" href="../../css/reset.css" />
+    <link rel="stylesheet" type="text/css" href="../../css/register.css" />
+    <script src="../../js/vue-v2.6.10.js"></script>
+    <script src="../../js/axios-0.18.0.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="pos">
+            <div class="login">
+                <span class="close iconfont icon-close"></span>
+                <img src="../../img/login/loginlogo.png" alt="">
+                <ul>
+                    <li></li>
+                    <li style="margin-bottom: 30px;font-size: 16px;color: red;" v-html="msg"></li>
+                    <li></li>
+                </ul>
+                <form action="" method="post" id="form">
+                    <input type="text" v-model="name" id="" placeholder="请输入姓名" @blur="fun1(name,'姓名不能为空')" @focus="fun2">
+                    <input type="text"  v-model="telephone" placeholder="请输入您的手机号" @blur="fun1(telephone,'手机号不能为空')" @focus="fun2">
+                    <input type="password"  v-model="password" id="" placeholder="请再次输入密码" @blur="fun1(password,'密码不能为空')" @focus="fun2">
+                    <input type="text" v-model="inCode"  class="yanzhen" placeholder="请输入验证码" @blur="fun1(inCode,'验证码不能为空')" @focus="fun2">
+                    <span class="yanzhenma" v-text="code" @click="initCode"></span>
+                    <div class="clear"></div>
+                    <div class="loginbtn" style="margin-left: 110px;line-height: 40px;" @click="submitForm">注册</div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    new Vue({
+        el: "#app",
+        data: {
+            code:"",
+            name:"",
+            telephone:"",
+            password:"",
+            inCode:"",
+            msg:"",
+            //表示手机号是否有效
+            flag:false
+            
+        },
+        methods: {
+           initCode(){
+               var str = "0123456789abcdefghijklmnobqrstuvwxyzABCDEFGHIJKLMNOBQRSTUVWXYZ"
+               var createCode=""
+               for(var i =0;i<4;i++){
+                //    生成随机数当作索引
+                var index= Math.floor(Math.random()*str.length)
+                // 根据索引获取值
+                createCode+=str.charAt(index)
+               }
+            //    将获取的值赋值给code
+               this.code=createCode
+           },
+           //value每一个输入框的内容  info如果该输入框为空提示的内容
+           fun1(value,info){
+            if(value.trim()==""){
+                this.msg=info
+            }else{
+                if('验证码不能为空'==info){
+                    if(this.code.toLocaleLowerCase()!=value.toLocaleLowerCase()){
+                        this.msg='验证码错误'
+                        return false
+                    }
+                }
+                if('手机号不能为空'==info){
+                    var tel=/^[1][3456789][0-9]{9}$/
+                    if(!tel.test(value)){
+                        // 校验失败
+                        this.msg="手机号不合法"
+                        return false
+                    }else{
+                        axios.get("http://192.168.10.88/education/b_user?method=checkTel&telephone="+this.telephone).then(resp=>{
+                            if(resp.data==0){
+                                //手机号已存在
+                                this.msg="手机号已存在"
+                                return false
+                            }else{
+                                this.msg="<font color='green'>手机号可用</font>"
+                                this.flag=true
+                            }
+                        })
+                    }
+                }
+                
+            }
+           },
+           fun2(){
+               this.msg=""
+           },
+           submitForm(){
+               var params=new URLSearchParams()
+               params.append("name",this.name)
+               params.append("telephone",this.telephone)
+               params.append("password",this.password)
+               if(this.name.trim()==""){
+                   this.msg="姓名不能为空"
+                   return false
+               }
+               if(this.password.trim()==""){
+                   this.msg="密码不能为空"
+                   return false
+               }
+               if(this.code.toLocaleLowerCase()!=this.inCode.toLocaleLowerCase()){
+                    this.msg='验证码错误'
+                    return false
+                }
+               if(this.flag){
+                    axios({
+                        url:"http://192.168.10.88/education/b_user?method=register",
+                        method:"post",
+                        data:params
+                    }).then(resp=>{
+                        if(resp.data.code==200){
+                            alert(resp.data.message)
+                            location.href="http://192.168.10.88:5501/%E5%B0%8Fu%E5%AD%A6%E4%B9%A0/pages/loginAndRegister/login.html"
+                        }else{
+                            alert(resp.data.message)
+                        }
+                    })
+                }else{
+                    this.msg="请检查手机号"
+                }
+               
+           }
+        },
+        created() {
+            this.initCode()
+        }
+        
+
+    })
+</script>
+
+
+</html>
